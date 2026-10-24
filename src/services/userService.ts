@@ -4,6 +4,7 @@ export interface User {
   id: number
   name: string
   email: string
+  avatarUrl?: string | null
 }
 
 export interface CreateUserPayload {
@@ -84,6 +85,21 @@ export async function updateUser(id: number, data: Pick<User, 'name' | 'email'>)
     return response.data.data
   } catch (error: unknown) {
     throw toRequestError(error, 'Impossible de modifier cet utilisateur.')
+  }
+}
+
+export async function uploadUserAvatar(id: number, file: File): Promise<User> {
+  const formData = new FormData()
+  formData.append('avatar', file)
+
+  try {
+    const response = await apiClient.put<{ data: User }>(`/api/users/${id}/avatar`, formData, {
+      timeout: 30000,
+    })
+
+    return response.data.data
+  } catch (error: unknown) {
+    throw toRequestError(error, 'Impossible d’envoyer la photo de profil.')
   }
 }
 

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import UserCreateModal from './UserCreateModal.vue'
 import UserDeleteModal from './UserDeleteModal.vue'
 import UserEditModal from './UserEditModal.vue'
 import { deleteUser, getUsers, type User, type UsersPagination } from '../services/userService'
+import { avatarThumbnail, userInitials } from '../utils/avatar'
 
 const usersPerPage = 10
 
@@ -28,6 +29,7 @@ const deleting = ref(false)
 const deletionError = ref('')
 const successMessage = ref('')
 const createModalOpen = ref(false)
+const brokenAvatars = reactive(new Set<string>())
 
 async function loadUsers(requestedPage = currentPage.value) {
   const requestId = ++latestRequestId
@@ -205,7 +207,23 @@ onMounted(loadUsers)
             @keydown.space.prevent="openEditModal(user)"
           >
             <td class="user-id">{{ user.id }}</td>
-            <td class="user-name">{{ user.name }}</td>
+            <td class="user-name">
+              <span class="user-identity">
+                <img
+                  v-if="user.avatarUrl && !brokenAvatars.has(user.avatarUrl)"
+                  class="user-avatar"
+                  :src="avatarThumbnail(user.avatarUrl, 32)"
+                  alt=""
+                  width="32"
+                  height="32"
+                  loading="lazy"
+                  decoding="async"
+                  @error="brokenAvatars.add(user.avatarUrl)"
+                />
+                <span v-else class="user-avatar avatar-fallback" aria-hidden="true">{{ userInitials(user.name) }}</span>
+                <span>{{ user.name }}</span>
+              </span>
+            </td>
             <td class="user-email">{{ user.email }}</td>
             <td class="actions-cell">
               <button
@@ -604,6 +622,29 @@ tbody tr:last-child td {
 
 .user-email {
   color: #4d6258;
+}
+
+.user-identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #edf6ef;
+}
+
+.avatar-fallback {
+  display: inline-grid;
+  place-items: center;
+  color: #287354;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 @keyframes pulse {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { updateUser, type User } from '../services/userService'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { updateUser, uploadUserAvatar, type User } from '../services/userService'
+import { avatarAcceptedTypes, avatarMaxBytes, avatarThumbnail, userInitials } from '../utils/avatar'
 
 const props = defineProps<{ user: User }>()
 const emit = defineEmits<{
@@ -12,22 +13,69 @@ const form = reactive({
   name: props.user.name,
   email: props.user.email,
 })
-const fieldErrors = reactive({ name: '', email: '' })
+const fieldErrors = reactive({ name: '', email: '', avatar: '' })
 const requestError = ref('')
 const saving = ref(false)
 const dialog = ref<HTMLElement | null>(null)
 const nameInput = ref<HTMLInputElement | null>(null)
+const avatarInput = ref<HTMLInputElement | null>(null)
+const avatarFile = ref<File | null>(null)
+const avatarPreview = ref('')
+const savedDetails = ref<User | null>(null)
+
+const currentAvatar = computed(() => avatarPreview.value
+  || (props.user.avatarUrl ? avatarThumbnail(props.user.avatarUrl, 72) : ''))
 
 let previouslyFocused: HTMLElement | null = null
 let previousBodyOverflow = ''
+
+function clearAvatarSelection() {
+  if (avatarPreview.value) {
+    URL.revokeObjectURL(avatarPreview.value)
+  }
+  avatarPreview.value = ''
+  avatarFile.value = null
+  if (avatarInput.value) {
+    avatarInput.value.value = ''
+  }
+}
 
 watch(() => props.user, (user) => {
   form.name = user.name
   form.email = user.email
   fieldErrors.name = ''
   fieldErrors.email = ''
+  fieldErrors.avatar = ''
   requestError.value = ''
+  savedDetails.value = null
+  clearAvatarSelection()
 })
+
+function handleAvatarChange(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  requestError.value = ''
+  fieldErrors.avatar = ''
+
+  if (!file) {
+    return
+  }
+
+  if (!avatarAcceptedTypes.includes(file.type)) {
+    clearAvatarSelection()
+    fieldErrors.avatar = 'Choisissez une image JPG, PNG ou WebP.'
+    return
+  }
+
+  if (file.size > avatarMaxBytes) {
+    clearAvatarSelection()
+    fieldErrors.avatar = 'La photo ne doit pas dépasser 2 Mo.'
+    return
+  }
+
+  clearAvatarSelection()
+  avatarFile.value = file
+  avatarPreview.value = URL.createObjectURL(file)
+}
 
 function validateForm(): boolean {
   fieldErrors.name = form.name.trim() ? '' : 'Le nom est obligatoire.'
@@ -49,9 +97,16 @@ function clearFieldError(field: 'name' | 'email') {
 }
 
 function requestClose() {
-  if (!saving.value) {
-    emit('close')
+  if (saving.value) {
+    return
   }
+
+  if (savedDetails.value) {
+    emit('saved', savedDetails.value)
+    return
+  }
+
+  emit('close')
 }
 
 function handleKeydown(event: KeyboardEvent) {
@@ -95,16 +150,33 @@ async function saveUser() {
   saving.value = true
   requestError.value = ''
 
+  const persistedUser = savedDetails.value ?? props.user
+  const details = { name: form.name.trim(), email: form.email.trim() }
+  const detailsChanged = details.name !== persistedUser.name
+    || details.email.toLowerCase() !== persistedUser.email
+
+  let uploadingAvatar = false
+
   try {
-    const updatedUser = await updateUser(props.user.id, {
-      name: form.name.trim(),
-      email: form.email.trim(),
-    })
+    let updatedUser = persistedUser
+    if (!avatarFile.value || detailsChanged) {
+      updatedUser = await updateUser(props.user.id, details)
+      savedDetails.value = updatedUser
+    }
+
+    if (avatarFile.value) {
+      uploadingAvatar = true
+      updatedUser = await uploadUserAvatar(props.user.id, avatarFile.value)
+    }
+
     emit('saved', updatedUser)
   } catch (error: unknown) {
-    requestError.value = error instanceof Error
+    const message = error instanceof Error
       ? error.message
       : 'Impossible de modifier cet utilisateur.'
+    requestError.value = uploadingAvatar && savedDetails.value
+      ? `Nom et e-mail enregistrés, mais la photo n’a pas pu être envoyée : ${message}`
+      : message
   } finally {
     saving.value = false
   }
@@ -123,6 +195,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  clearAvatarSelection()
   window.removeEventListener('keydown', handleKeydown)
   document.body.style.overflow = previousBodyOverflow
   previouslyFocused?.focus()
@@ -159,6 +232,55 @@ onBeforeUnmount(() => {
         </header>
 
         <form class="edit-form" novalidate @submit.prevent="saveUser">
+          <div class="avatar-field">
+            <img
+              v-if="currentAvatar"
+              class="avatar-preview"
+              :src="currentAvatar"
+              alt="Aperçu de la photo de profil"
+              width="72"
+              height="72"
+            />
+            <span v-else class="avatar-preview avatar-fallback" aria-hidden="true">
+              {{ userInitials(form.name || user.name) }}
+            </span>
+
+            <div class="avatar-controls">
+              <input
+                id="edit-user-avatar"
+                ref="avatarInput"
+                class="avatar-input"
+                type="file"
+                name="avatar"
+                accept="image/jpeg,image/png,image/webp"
+                :aria-invalid="Boolean(fieldErrors.avatar)"
+                :aria-describedby="fieldErrors.avatar ? 'edit-user-avatar-error' : 'edit-user-avatar-hint'"
+                :disabled="saving"
+                @change="handleAvatarChange"
+              />
+              <div class="avatar-buttons">
+                <label for="edit-user-avatar" class="avatar-pick" :class="{ disabled: saving }">
+                  {{ currentAvatar ? 'Changer la photo' : 'Ajouter une photo' }}
+                </label>
+                <button
+                  v-if="avatarFile"
+                  class="avatar-reset"
+                  type="button"
+                  :disabled="saving"
+                  @click="clearAvatarSelection"
+                >
+                  Annuler la sélection
+                </button>
+              </div>
+              <p v-if="fieldErrors.avatar" id="edit-user-avatar-error" class="field-error">
+                {{ fieldErrors.avatar }}
+              </p>
+              <p v-else id="edit-user-avatar-hint" class="field-hint">
+                {{ avatarFile ? avatarFile.name : 'JPG, PNG ou WebP · 2 Mo maximum' }}
+              </p>
+            </div>
+          </div>
+
           <div class="field-group">
             <label for="edit-user-name">Nom</label>
             <input
@@ -319,6 +441,97 @@ h2 {
 .field-group {
   display: grid;
   gap: 8px;
+}
+
+.avatar-field {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatar-preview {
+  width: 72px;
+  height: 72px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #edf6ef;
+}
+
+.avatar-fallback {
+  display: grid;
+  place-items: center;
+  color: #287354;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.avatar-controls {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.avatar-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.avatar-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.avatar-pick,
+.avatar-reset {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px solid #c9ddcf;
+  border-radius: 5px;
+  background: #fff;
+  color: #1d5b42;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.avatar-reset {
+  border-color: #d6dfd9;
+  color: #43564b;
+}
+
+.avatar-pick:hover:not(.disabled),
+.avatar-reset:hover:not(:disabled) {
+  background: #f0f5f1;
+}
+
+.avatar-input:focus-visible + .avatar-buttons .avatar-pick,
+.avatar-reset:focus-visible {
+  outline: 3px solid rgb(40 115 84 / 28%);
+  outline-offset: 2px;
+}
+
+.avatar-pick.disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.field-hint {
+  margin: 0;
+  overflow: hidden;
+  color: #71807a;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 label {

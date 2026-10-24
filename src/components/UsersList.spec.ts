@@ -142,6 +142,27 @@ describe('UsersList statistics refresh events', () => {
   })
 })
 
+describe('UsersList avatars', () => {
+  it('affiche la miniature Cloudinary ou les initiales, puis les initiales si l’image échoue', async () => {
+    const avatarUrl = 'https://res.cloudinary.com/demo/image/upload/v1/vueapp/avatars/user_1.png'
+    mockGetUsers.mockResolvedValue(usersPage([
+      { id: 1, name: 'Alice Martin', email: 'alice@example.com', avatarUrl },
+      { id: 2, name: 'Bilal Dupont', email: 'bilal@example.com', avatarUrl: null },
+    ]))
+    const wrapper = mountUsersList()
+    await flushPromises()
+
+    const image = wrapper.get('img.user-avatar')
+    expect(image.attributes('src'))
+      .toBe('https://res.cloudinary.com/demo/image/upload/c_fill,g_face,w_64,h_64,f_auto,q_auto/v1/vueapp/avatars/user_1.png')
+    expect(wrapper.findAll('.avatar-fallback').map((element) => element.text())).toEqual(['BD'])
+
+    await image.trigger('error')
+    expect(wrapper.find('img.user-avatar').exists()).toBe(false)
+    expect(wrapper.findAll('.avatar-fallback').map((element) => element.text())).toEqual(['AM', 'BD'])
+  })
+})
+
 describe('UsersList pagination', () => {
   it('charge la première page, navigue suivant/précédent et affiche les métadonnées', async () => {
     const firstPageUsers = Array.from({ length: 10 }, (_, index) => ({
