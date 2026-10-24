@@ -1,4 +1,6 @@
-import axios from 'axios'
+import { apiClient, toRequestError } from './api'
+
+export { apiClient, toRequestError }
 
 export interface User {
   id: number
@@ -21,34 +23,6 @@ export interface UsersPagination {
 export interface UsersPageResponse {
   data: User[]
   pagination: UsersPagination
-}
-
-interface ApiErrorResponse {
-  error?: { message?: string }
-  message?: string
-}
-
-const apiUrl = (import.meta.env?.VITE_API_URL || 'http://localhost:3000').replace(/\/+$/, '')
-
-export const apiClient = axios.create({
-  baseURL: apiUrl,
-  timeout: 10000,
-})
-
-export function toRequestError(error: unknown, fallback: string): Error {
-  if (axios.isAxiosError<ApiErrorResponse>(error)) {
-    const apiMessage = error.response?.data?.error?.message ?? error.response?.data?.message
-
-    if (apiMessage) {
-      return new Error(apiMessage)
-    }
-
-    if (!error.response) {
-      return new Error('Impossible de joindre le serveur. Vérifiez que le backend est démarré.')
-    }
-  }
-
-  return new Error(fallback)
 }
 
 export async function getUsers(page: number = 1): Promise<UsersPageResponse> {

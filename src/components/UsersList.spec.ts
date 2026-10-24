@@ -163,6 +163,89 @@ describe('UsersList avatars', () => {
   })
 })
 
+describe('UsersList changement de page sans décalage', () => {
+  const pageOf = (page: number) => Array.from({ length: 10 }, (_, index) => ({
+    id: (page - 1) * 10 + index + 1,
+    name: `User ${(page - 1) * 10 + index + 1}`,
+    email: `user${(page - 1) * 10 + index + 1}@example.com`,
+  }))
+
+  it('conserve les lignes actuelles, atténuées, jusqu’à la réception de la page suivante', async () => {
+    let resolveSecondPage!: (value: ReturnType<typeof usersPage>) => void
+    mockGetUsers
+      .mockResolvedValueOnce(usersPage(pageOf(1), 1, 25, 3))
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveSecondPage = resolve }))
+    const wrapper = mountUsersList()
+    await flushPromises()
+
+    await wrapper.get('.next-page').trigger('click')
+
+    expect(wrapper.findAll('.user-row')).toHaveLength(10)
+    expect(wrapper.text()).toContain('User 1')
+    expect(wrapper.get('.table-region').classes()).toContain('refreshing')
+    expect(wrapper.get('.table-scroll').attributes('inert')).toBeDefined()
+    expect(wrapper.get('.refresh-indicator').text()).toBe('Chargement des utilisateurs…')
+    expect(wrapper.find('.loading-message').exists()).toBe(false)
+    expect(wrapper.find('.pagination-controls').exists()).toBe(true)
+    for (const selector of ['.previous-page', '.next-page', '.refresh-button']) {
+      expect((wrapper.get(selector).element as HTMLButtonElement).disabled).toBe(true)
+    }
+
+    await wrapper.get('.next-page').trigger('click')
+    expect(mockGetUsers).toHaveBeenCalledTimes(2)
+
+    resolveSecondPage(usersPage(pageOf(2), 2, 25, 3))
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('User 11')
+    expect(wrapper.text()).not.toContain('User 1 ')
+    expect(wrapper.get('.table-region').classes()).not.toContain('refreshing')
+    expect(wrapper.get('.table-scroll').attributes('inert')).toBeUndefined()
+    expect(wrapper.find('.refresh-indicator').exists()).toBe(false)
+    expect((wrapper.get('.next-page').element as HTMLButtonElement).disabled).toBe(false)
+    expect(wrapper.text()).toContain('Page 2 sur 3')
+  })
+
+  it('garde le tableau en place sur une dernière page incomplète', async () => {
+    mockGetUsers
+      .mockResolvedValueOnce(usersPage(pageOf(1), 1, 15, 2))
+      .mockResolvedValueOnce(usersPage(pageOf(2).slice(0, 5), 2, 15, 2))
+    const wrapper = mountUsersList()
+    await flushPromises()
+
+    await wrapper.get('.next-page').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.findAll('.user-row')).toHaveLength(5)
+    expect(wrapper.find('.table-scroll').exists()).toBe(true)
+    expect(wrapper.find('.pagination-controls').exists()).toBe(true)
+  })
+
+  it('affiche toujours le message de chargement initial quand aucune ligne n’est encore affichée', async () => {
+    mockGetUsers.mockImplementation(() => new Promise(() => {}))
+    const wrapper = mountUsersList()
+    await flushPromises()
+
+    expect(wrapper.find('.loading-message').exists()).toBe(true)
+    expect(wrapper.find('.table-region').exists()).toBe(false)
+    expect(wrapper.find('.pagination-controls').exists()).toBe(false)
+  })
+
+  it('affiche l’erreur avec Réessayer si le changement de page échoue', async () => {
+    mockGetUsers
+      .mockResolvedValueOnce(usersPage(pageOf(1), 1, 25, 3))
+      .mockRejectedValueOnce(new Error('Impossible de récupérer la liste des utilisateurs.'))
+    const wrapper = mountUsersList()
+    await flushPromises()
+
+    await wrapper.get('.next-page').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[role="alert"]').text()).toContain('Impossible de récupérer la liste des utilisateurs.')
+    expect(wrapper.find('.retry-button').exists()).toBe(true)
+  })
+})
+
 describe('UsersList pagination', () => {
   it('charge la première page, navigue suivant/précédent et affiche les métadonnées', async () => {
     const firstPageUsers = Array.from({ length: 10 }, (_, index) => ({

@@ -170,7 +170,7 @@ onMounted(loadUsers)
       {{ successMessage }}
     </p>
 
-    <p v-if="loading" class="message loading-message" role="status" aria-live="polite">
+    <p v-if="loading && users.length === 0" class="message loading-message" role="status" aria-live="polite">
       <span class="loading-dot" aria-hidden="true"></span>
       Chargement des utilisateurs…
     </p>
@@ -184,69 +184,75 @@ onMounted(loadUsers)
       Aucun utilisateur pour le moment.
     </p>
 
-    <div v-else class="table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th scope="col">ID</th>
-            <th scope="col">Nom</th>
-            <th scope="col">Email</th>
-            <th scope="col" class="actions-header">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="user in users"
-            :key="user.id"
-            class="user-row"
-            tabindex="0"
-            :aria-label="`Modifier l’utilisateur ${user.name}`"
-            aria-haspopup="dialog"
-            @click="openEditModal(user)"
-            @keydown.enter.prevent="openEditModal(user)"
-            @keydown.space.prevent="openEditModal(user)"
-          >
-            <td class="user-id">{{ user.id }}</td>
-            <td class="user-name">
-              <span class="user-identity">
-                <img
-                  v-if="user.avatarUrl && !brokenAvatars.has(user.avatarUrl)"
-                  class="user-avatar"
-                  :src="avatarThumbnail(user.avatarUrl, 32)"
-                  alt=""
-                  width="32"
-                  height="32"
-                  loading="lazy"
-                  decoding="async"
-                  @error="brokenAvatars.add(user.avatarUrl)"
-                />
-                <span v-else class="user-avatar avatar-fallback" aria-hidden="true">{{ userInitials(user.name) }}</span>
-                <span>{{ user.name }}</span>
-              </span>
-            </td>
-            <td class="user-email">{{ user.email }}</td>
-            <td class="actions-cell">
-              <button
-                class="delete-row-button"
-                type="button"
-                :aria-label="`Supprimer ${user.name}`"
-                @click.stop="openDeleteModal(user)"
-                @keydown.enter.stop
-                @keydown.space.stop
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M4 7h16M10 11v6m4-6v6M5.5 7l1 13h11l1-13M9 7V4h6v3" />
-                </svg>
-                <span>Supprimer</span>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-else class="table-region" :class="{ refreshing: loading }">
+      <p v-if="loading" class="refresh-indicator" role="status" aria-live="polite">
+        <span class="loading-dot" aria-hidden="true"></span>
+        Chargement des utilisateurs…
+      </p>
+      <div class="table-scroll" :inert="loading || undefined">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Nom</th>
+              <th scope="col">Email</th>
+              <th scope="col" class="actions-header">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="user in users"
+              :key="user.id"
+              class="user-row"
+              tabindex="0"
+              :aria-label="`Modifier l’utilisateur ${user.name}`"
+              aria-haspopup="dialog"
+              @click="openEditModal(user)"
+              @keydown.enter.prevent="openEditModal(user)"
+              @keydown.space.prevent="openEditModal(user)"
+            >
+              <td class="user-id">{{ user.id }}</td>
+              <td class="user-name">
+                <span class="user-identity">
+                  <img
+                    v-if="user.avatarUrl && !brokenAvatars.has(user.avatarUrl)"
+                    class="user-avatar"
+                    :src="avatarThumbnail(user.avatarUrl, 32)"
+                    alt=""
+                    width="32"
+                    height="32"
+                    loading="lazy"
+                    decoding="async"
+                    @error="brokenAvatars.add(user.avatarUrl)"
+                  />
+                  <span v-else class="user-avatar avatar-fallback" aria-hidden="true">{{ userInitials(user.name) }}</span>
+                  <span>{{ user.name }}</span>
+                </span>
+              </td>
+              <td class="user-email">{{ user.email }}</td>
+              <td class="actions-cell">
+                <button
+                  class="delete-row-button"
+                  type="button"
+                  :aria-label="`Supprimer ${user.name}`"
+                  @click.stop="openDeleteModal(user)"
+                  @keydown.enter.stop
+                  @keydown.space.stop
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 7h16M10 11v6m4-6v6M5.5 7l1 13h11l1-13M9 7V4h6v3" />
+                  </svg>
+                  <span>Supprimer</span>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <nav
-      v-if="!loading && !error && pagination.totalItems > 0"
+      v-if="!error && pagination.totalItems > 0"
       class="pagination-controls"
       aria-label="Pagination des utilisateurs"
     >
@@ -311,6 +317,8 @@ onMounted(loadUsers)
   --green-dark: #1d5b42;
   --green-wash: #eff7f1;
   --error: #a23e37;
+  --head-height: 46px;
+  --row-height: 65px;
 
   width: min(100% - 48px, 920px);
   margin: 48px auto 64px;
@@ -461,8 +469,55 @@ h2 {
   animation: pulse 900ms ease-in-out infinite alternate;
 }
 
+.table-region {
+  position: relative;
+}
+
+/* Hauteur réservée à une page complète (en-tête + 10 lignes) : la dernière page,
+   plus courte, et les rechargements ne décalent pas la pagination. */
 .table-scroll {
+  min-height: calc(var(--head-height) + 10 * var(--row-height));
   overflow-x: auto;
+}
+
+/* Délai court : une réponse rapide ne fait pas clignoter le tableau. */
+.refreshing .table-scroll {
+  opacity: 0.5;
+  transition: opacity 150ms ease 120ms;
+}
+
+.refresh-indicator {
+  position: absolute;
+  z-index: 1;
+  top: calc(var(--head-height) + 16px);
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgb(34 63 47 / 10%);
+  color: var(--green-dark);
+  font-size: 13px;
+  font-weight: 600;
+  transform: translateX(-50%);
+  animation: indicator-in 150ms ease 120ms both;
+}
+
+@keyframes indicator-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+thead tr {
+  height: var(--head-height);
+}
+
+.user-row {
+  height: var(--row-height);
 }
 
 .pagination-controls {

@@ -1,7 +1,8 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h, ref, nextTick } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import App from '../App.vue'
+import { routerKey } from 'vue-router'
+import DashboardView from '../views/DashboardView.vue'
 import { createUser, getUsers, type User } from '../services/userService'
 import { getUsersGrowth } from '../services/statsService'
 import { getUsersStats } from '../services/usersStatsService'
@@ -228,9 +229,10 @@ describe('UserCreateModal', () => {
       .mockResolvedValueOnce(usersPage([]))
       .mockResolvedValueOnce(usersPage([createdUser]))
 
-    const wrapper = mount(App, {
+    const wrapper = mount(DashboardView, {
       attachTo: document.body,
       global: {
+        provide: { [routerKey as symbol]: { replace: vi.fn() } },
         stubs: {
           UsersStatsCards: makeRefreshStub('UsersStatsCards', statsRefresh),
           UsersGrowthChart: makeRefreshStub('UsersGrowthChart', growthRefresh),
