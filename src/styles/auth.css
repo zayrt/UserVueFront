@@ -1,0 +1,145 @@
+.auth-page {
+  display: grid;
+  min-height: 100vh;
+  box-sizing: border-box;
+  place-items: center;
+  padding: 24px 16px;
+}
+
+.auth-card {
+  width: min(100%, 420px);
+  box-sizing: border-box;
+  padding: 32px 30px 28px;
+  border: 1px solid #e1e9e4;
+  border-radius: 8px;
+  background: #fff;
+  color: #263634;
+  text-align: left;
+  box-shadow: 0 12px 32px rgb(34 63 47 / 8%);
+}
+
+.auth-card .eyebrow {
+  margin: 0 0 6px;
+  color: #287354;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.auth-card h1 {
+  margin: 0 0 24px;
+  color: #263634;
+  font-size: 24px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.auth-form {
+  display: grid;
+  gap: 18px;
+}
+
+.auth-field {
+  display: grid;
+  gap: 7px;
+}
+
+.auth-field label {
+  color: #354940;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.auth-field input {
+  width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  border: 1px solid #cdd8d0;
+  border-radius: 5px;
+  background: #fff;
+  color: #263634;
+  font: inherit;
+  font-size: 14px;
+}
+
+.auth-field input:focus {
+  border-color: #287354;
+  outline: 0;
+  box-shadow: 0 0 0 3px rgb(40 115 84 / 13%);
+}
+
+.auth-field input[aria-invalid="true"] {
+  border-color: #b4453e;
+}
+
+.auth-field-error {
+  margin: 0;
+  color: #a23e37;
+  font-size: 12px;
+}
+
+.auth-alert,
+.auth-notice {
+  margin: 0;
+  padding: 11px 12px;
+  border-radius: 5px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.auth-alert {
+  border: 1px solid #efd0cc;
+  background: #fff6f4;
+  color: #a23e37;
+}
+
+.auth-notice {
+  border: 1px solid #d7e9dc;
+  background: #f0f8f2;
+  color: #1d6846;
+}
+
+.auth-submit {
+  min-height: 44px;
+  border: 0;
+  border-radius: 5px;
+  background: #287354;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.auth-submit:hover:not(:disabled) {
+  background: #1d5b42;
+}
+
+.auth-submit:focus-visible {
+  outline: 3px solid rgb(40 115 84 / 28%);
+  outline-offset: 2px;
+}
+
+.auth-submit:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.auth-switch {
+  margin: 22px 0 0;
+  color: #63726a;
+  font-size: 13px;
+  text-align: center;
+}
+
+.auth-switch a {
+  color: #1d5b42;
+  font-weight: 650;
+}
+
+.auth-field-hint {
+  margin: 0;
+  color: #71807a;
+  font-size: 12px;
+}
