@@ -43,7 +43,7 @@ async function handleLogout() {
 <template>
   <header class="dashboard-header">
     <div>
-      <p class="eyebrow">vueapp</p>
+      <p class="eyebrow">IZI</p>
       <h1>Tableau de bord</h1>
     </div>
     <div class="session">
