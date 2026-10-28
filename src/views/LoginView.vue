@@ -44,7 +44,7 @@ async function submit() {
 <template>
   <main class="auth-page">
     <section class="auth-card" aria-labelledby="login-title">
-      <p class="eyebrow">IZI</p>
+      <p class="eyebrow">Gestion Utilisateurs</p>
       <h1 id="login-title">Connexion</h1>
 
       <form class="auth-form" novalidate @submit.prevent="submit">
