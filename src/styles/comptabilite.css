@@ -1,0 +1,378 @@
+/* Module Comptabilité : jetons et briques partagées par toutes les pages du module. */
+
+/* La navigation latérale + le contenu demandent plus que la largeur par défaut de #app. */
+#app:has(.compta-shell) {
+  width: 1440px;
+}
+
+.compta-shell {
+  --ink: #101828;
+  --ink-soft: #344054;
+  --muted: #556070;
+  --subtle: #98a2b3;
+  --line: #e2e6ea;
+  --line-soft: #eef1f4;
+  --field: #d0d5dd;
+  --surface-alt: #f9fafb;
+  --page: #f4f6f8;
+  --brand: #0b6e66;
+  --brand-ink: #08524c;
+  --brand-wash: #e3f2f0;
+  --warn: #a3480a;
+  --warn-ink: #8a3a08;
+  --warn-deep: #6b2e06;
+  --warn-wash: #fdf0e1;
+  --outflow: #e8a86b;
+  --night: #0f1b2d;
+  --night-muted: #b8c2cf;
+  --danger: #b42318;
+  --danger-wash: #fef3f2;
+  --sans: 'IBM Plex Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 14px;
+  letter-spacing: normal;
+  line-height: normal;
+  text-align: left;
+}
+
+.compta-shell .mono {
+  font-family: var(--mono);
+}
+
+/* En-tête de page : contexte + titre, actions à droite. */
+.compta-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.compta-page-context {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.compta-shell h1 {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.6px;
+  line-height: 1.3;
+}
+
+.compta-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Cartes */
+.compta-card {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.compta-card.padded {
+  padding: 24px;
+}
+
+.compta-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  padding: 20px 24px;
+}
+
+.compta-card-header.bordered {
+  border-bottom: 1px solid var(--line);
+}
+
+.compta-eyebrow {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.72px;
+  text-transform: uppercase;
+}
+
+.compta-shell h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: normal;
+  line-height: 1.3;
+}
+
+.compta-subtitle {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.compta-meta {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.compta-body {
+  padding: 0 24px 24px;
+}
+
+/* Boutons */
+.compta-button {
+  display: inline-flex;
+  min-height: 44px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border: 1px solid var(--field);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, opacity 140ms ease;
+}
+
+.compta-button.large {
+  min-height: 46px;
+  padding: 0 18px;
+  font-size: 15px;
+}
+
+.compta-button.small {
+  min-height: 40px;
+  padding: 0 14px;
+}
+
+.compta-button:hover:not(:disabled) {
+  background: var(--surface-alt);
+}
+
+.compta-button.primary {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: #fff;
+}
+
+.compta-button.primary:hover:not(:disabled) {
+  border-color: var(--brand-ink);
+  background: var(--brand-ink);
+}
+
+.compta-button.outline {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.compta-button.outline:hover:not(:disabled) {
+  background: var(--brand-wash);
+}
+
+.compta-button:disabled {
+  border-color: var(--line);
+  background: var(--surface-alt);
+  color: var(--subtle);
+  font-weight: 400;
+  cursor: not-allowed;
+}
+
+.compta-button.primary:disabled {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: #fff;
+  font-weight: 600;
+  opacity: 0.45;
+}
+
+.compta-shell :focus-visible {
+  outline: 3px solid rgb(11 110 102 / 28%);
+  outline-offset: 2px;
+}
+
+/* Messages */
+.compta-message {
+  margin: 0;
+  padding: 32px 24px;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.compta-alert {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--danger-wash);
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.compta-alert.success {
+  background: var(--brand-wash);
+  color: var(--brand-ink);
+}
+
+.compta-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--danger);
+}
+
+.compta-error p {
+  margin: 0;
+}
+
+/* Tableaux */
+.compta-table-scroll {
+  overflow-x: auto;
+}
+
+.compta-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.compta-table th,
+.compta-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--ink);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.compta-table thead th {
+  padding-bottom: 11px;
+  border-bottom-color: var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.48px;
+  text-transform: uppercase;
+}
+
+.compta-table.shaded thead th {
+  background: var(--surface-alt);
+}
+
+.compta-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.compta-table .amount {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.compta-table thead .amount {
+  font-family: var(--sans);
+}
+
+.compta-table .wrap {
+  min-width: 180px;
+  white-space: normal;
+}
+
+.compta-table tfoot td {
+  border-top: 1px solid var(--line);
+  border-bottom: 0;
+  background: var(--surface-alt);
+  font-weight: 600;
+}
+
+/* Pastilles de statut et codes de lettrage */
+.compta-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.compta-badge.ok {
+  background: var(--brand-wash);
+  color: var(--brand-ink);
+}
+
+.compta-badge.warn {
+  background: var(--warn-wash);
+  color: var(--warn-ink);
+}
+
+.compta-badge.neutral {
+  background: var(--line-soft);
+  color: var(--ink-soft);
+}
+
+.compta-badge.ko {
+  background: var(--danger-wash);
+  color: var(--danger);
+}
+
+.compta-code {
+  display: inline-flex;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: var(--brand-wash);
+  color: var(--brand-ink);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .compta-card-header {
+    padding: 16px 18px;
+  }
+
+  .compta-card.padded {
+    padding: 18px;
+  }
+
+  .compta-body {
+    padding: 0 18px 18px;
+  }
+
+  .compta-shell h1 {
+    font-size: 24px;
+  }
+}
