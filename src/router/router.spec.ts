@@ -80,6 +80,24 @@ describe('navigation guard', () => {
     expect((await navigate('/inconnue')).name).toBe('login')
   })
 
+  it('réserve l’onglet Comptabilité aux utilisateurs connectés', async () => {
+    mockFetchCurrentAccount.mockResolvedValue(null)
+
+    const route = await navigate('/comptabilite')
+
+    expect(route.name).toBe('login')
+    expect(route.query).toEqual({ redirect: '/comptabilite' })
+  })
+
+  it('ouvre l’onglet Comptabilité avec une session valide', async () => {
+    mockFetchCurrentAccount.mockResolvedValue(account)
+
+    const route = await navigate('/comptabilite')
+
+    expect(route.name).toBe('comptabilite')
+    expect(document.title).toBe('Comptabilité · Gestion Utilisateurs')
+  })
+
   it('bloque de nouveau le dashboard après clearSession (session expirée)', async () => {
     mockFetchCurrentAccount.mockResolvedValue(account)
     const router = createAppRouter(createMemoryHistory())
